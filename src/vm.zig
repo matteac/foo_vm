@@ -10,13 +10,11 @@ pub const VMError = error{
 pub const VM = struct {
     /// IP ACC R1 R2
     reg: [4]u16 = [_]u16{ 0, 0, 0, 0 },
-    memory: [256]u16 = [_]u16{0} ** 256,
+    memory: []u16,
 
-    pub fn init(program: []const u16) VM {
-        var vm = VM{};
-        for (0.., program) |i, op| {
-            vm.memory[i] = op;
-        }
+    pub fn init(mem: []u16) VM {
+        var vm = VM{ .memory = mem };
+
         vm.memory[vm.memory.len - 1] = instruction.HALT;
         return vm;
     }

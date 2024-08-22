@@ -10,7 +10,14 @@ pub fn main() !void {
         0x0000,
         instruction.HALT,
     };
-    var vmach = vm.VM.init(&instr);
+    var mem = [_]u16{0} ** 512;
+
+    for (0.., instr) |i, op| {
+        mem[i] = op;
+    }
+
+    var vmach = vm.VM.init(&mem);
+
     vmach.dump(instr.len + 1);
     while (true) {
         const status = try vmach.step();
@@ -18,6 +25,5 @@ pub fn main() !void {
             std.process.exit(@intCast(status));
         }
         vmach.dump_regs();
-        vmach.dump(2);
     }
 }
