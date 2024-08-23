@@ -42,4 +42,13 @@ pub const JE: u16 = 0xa4;
 /// jne 0xdead; -> continue
 pub const JNE: u16 = 0xa5;
 
+/// puti 0xff; -> 255
+pub const PUT_INT_LIT: u16 = 0xdead;
+/// puti r1
+pub const PUT_INT_REG: u16 = 0xdeae;
+/// putc 0x48; -> H
+pub const PUT_CHAR_LIT: u16 = 0xbeef;
+/// putc r1
+pub const PUT_CHAR_REG: u16 = 0xbeff;
+
 pub const HALT: u16 = 0xFFFF;

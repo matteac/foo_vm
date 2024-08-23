@@ -5,9 +5,34 @@ const vm = @import("vm.zig");
 
 pub fn main() !void {
     const instr = [_]u16{
-        instruction.LOAD,
-        register.R1,
-        0x0000,
+        instruction.PUT_CHAR_LIT,
+        0x48,
+        instruction.PUT_CHAR_LIT,
+        0x65,
+        instruction.PUT_CHAR_LIT,
+        0x6c,
+        instruction.PUT_CHAR_LIT,
+        0x6c,
+        instruction.PUT_CHAR_LIT,
+        0x6f,
+        instruction.PUT_CHAR_LIT,
+        0x2c,
+        instruction.PUT_CHAR_LIT,
+        0x20,
+        instruction.PUT_CHAR_LIT,
+        0x57,
+        instruction.PUT_CHAR_LIT,
+        0x6f,
+        instruction.PUT_CHAR_LIT,
+        0x72,
+        instruction.PUT_CHAR_LIT,
+        0x6c,
+        instruction.PUT_CHAR_LIT,
+        0x64,
+        instruction.PUT_CHAR_LIT,
+        0x21,
+        instruction.PUT_CHAR_LIT,
+        0xa,
         instruction.HALT,
     };
     var mem = [_]u16{0} ** 512;
@@ -19,11 +44,12 @@ pub fn main() !void {
     var vmach = vm.VM.init(&mem);
 
     vmach.dump(instr.len + 1);
+    std.debug.print("\n", .{});
     while (true) {
         const status = try vmach.step();
         if (status >= 0) {
             std.process.exit(@intCast(status));
         }
-        vmach.dump_regs();
+        // vmach.dump_regs();
     }
 }

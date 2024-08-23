@@ -144,11 +144,35 @@ pub const VM = struct {
                 }
             },
 
+            instruction.PUT_INT_LIT => {
+                const val = try self.fetch();
+                try self.put_int(val);
+            },
+            instruction.PUT_INT_REG => {
+                const reg = try self.fetch();
+                const val = self.reg[reg];
+                try self.put_int(val);
+            },
+
+            instruction.PUT_CHAR_LIT => {
+                const val = try self.fetch();
+                try self.put_char(@intCast(val));
+            },
+
             instruction.NOP => {},
             instruction.HALT => return 0,
             else => return VMError.InvalidInstruction,
         }
         return -1;
+    }
+
+    fn put_int(_: *VM, val: u16) !void {
+        const stdout = std.io.getStdOut().writer();
+        try std.fmt.format(stdout, "{}", .{val});
+    }
+    fn put_char(_: *VM, ch: u8) !void {
+        const stdout = std.io.getStdOut().writer();
+        try std.fmt.format(stdout, "{s}", .{[_]u8{ch}});
     }
 
     fn fetch(self: *VM) !u16 {
