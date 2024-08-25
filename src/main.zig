@@ -2,7 +2,6 @@ const std = @import("std");
 const instruction = @import("instruction.zig");
 const register = @import("register.zig");
 const vm = @import("vm.zig");
-const lexer = @import("compiler/lexer.zig");
 
 pub fn main() !void {
     const instr = [_]u16{
