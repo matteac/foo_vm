@@ -9,7 +9,7 @@ pub const MOV_REG_REG: u16 = 0x02;
 pub const LOAD: u16 = 0x03;
 /// store 0xffff, 0xdead; -> 0xffff
 pub const STORE_LIT: u16 = 0x04;
-/// store 0xffff, 0xdead; -> 0xffff
+/// store 0xffff, r1; -> 0xffff
 pub const STORE_REG: u16 = 0x05;
 
 /// add 0xdead, 0xbeef; -> acc
@@ -25,6 +25,11 @@ pub const SUB_LIT_LIT: u16 = 0x09;
 pub const SUB_LIT_REG: u16 = 0x0a;
 /// sub r1, r2; -> acc
 pub const SUB_REG_REG: u16 = 0x0b;
+
+/// inc r1; -> r1 += 1
+pub const INC_REG: u16 = 0x0c;
+/// dec r1; -> r1 -= 1
+pub const DEC_REG: u16 = 0x0d;
 
 /// cmp 0xdead, 0xbeef; -> acc (0 eq, 1 ne)
 pub const CMP_LIT_LIT: u16 = 0xa0;

@@ -95,6 +95,15 @@ pub const VM = struct {
                 const valb = self.reg[regb];
                 self.reg[register.ACC] = vala - valb;
             },
+            instruction.INC_REG => {
+                const reg = try self.fetch();
+                self.reg[reg] += 1;
+            },
+
+            instruction.DEC_REG => {
+                const reg = try self.fetch();
+                self.reg[reg] -= 1;
+            },
 
             instruction.CMP_LIT_LIT => {
                 const vala = try self.fetch();
