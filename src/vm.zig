@@ -13,24 +13,46 @@ pub const VM = struct {
     memory: []u16,
 
     pub fn init(mem: []u16) VM {
-        var vm = VM{ .memory = mem };
-
-        vm.memory[vm.memory.len - 1] = instruction.HALT;
-        return vm;
+        return VM{ .memory = mem };
     }
 
     pub fn step(self: *VM) !i16 {
-        switch (try self.fetch()) {
+        const op = try self.fetch();
+        switch (op) {
             instruction.MOV_LIT_REG => {
                 const reg = try self.fetch();
                 const val = try self.fetch();
-                // std.debug.print("\nSetting register 0x{x} to 0x{x}\n\n", .{ reg, val });
                 self.reg[reg] = val;
             },
             instruction.MOV_REG_REG => {
                 const rega = try self.fetch();
                 const regb = try self.fetch();
                 self.reg[rega] = self.reg[regb];
+            },
+            instruction.MOV_ADDR_REG => {
+                const rega = try self.fetch();
+                const regb = try self.fetch();
+                const addr = self.reg[regb];
+                if (addr >= self.memory.len) {
+                    return VMError.OutOfBounds;
+                }
+                const val = self.memory[addr];
+                self.reg[rega] = val;
+            },
+            instruction.MOV_REG_ADDR => {
+                const rega = try self.fetch();
+                const regb = try self.fetch();
+                const addr = self.reg[rega];
+                const val = self.reg[regb];
+                if (addr >= self.memory.len) return VMError.OutOfBounds;
+                self.memory[addr] = val;
+            },
+            instruction.MOV_LIT_ADDR => {
+                const reg = try self.fetch();
+                const val = try self.fetch();
+                const addr = self.reg[reg];
+                if (addr >= self.memory.len) return VMError.OutOfBounds;
+                self.memory[addr] = val;
             },
 
             instruction.LOAD => {
@@ -167,10 +189,18 @@ pub const VM = struct {
                 const val = try self.fetch();
                 try self.put_char(@intCast(val));
             },
+            instruction.PUT_CHAR_REG => {
+                const reg = try self.fetch();
+                const val = self.reg[reg];
+                try self.put_char(@intCast(val));
+            },
 
             instruction.NOP => {},
             instruction.HALT => return 0,
-            else => return VMError.InvalidInstruction,
+            else => {
+                std.debug.print("INVALID: {x}\n", .{op});
+                return VMError.InvalidInstruction;
+            },
         }
         return -1;
     }
@@ -207,3 +237,181 @@ pub const VM = struct {
         }
     }
 };
+
+test "mov_lit_reg" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R1,
+        0xdead,
+        instruction.HALT,
+    };
+    var vm = VM.init(&instructions);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 0xdead);
+            return;
+        }
+    }
+}
+
+test "mov_reg_reg" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R1,
+        0xdead,
+        instruction.MOV_REG_REG,
+        register.R2,
+        register.R1,
+        instruction.HALT,
+    };
+    var vm = VM.init(&instructions);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 0xdead);
+            try std.testing.expect(vm.reg[register.R2] == 0xdead);
+            return;
+        }
+    }
+}
+
+test "mov_addr_reg" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R2,
+        0x7,
+        instruction.MOV_ADDR_REG,
+        register.R1,
+        register.R2,
+        instruction.HALT,
+        'H',
+    };
+    var vm = VM.init(&instructions);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 'H');
+            try std.testing.expect(vm.reg[register.R2] == 0x7);
+            return;
+        }
+    }
+}
+
+test "mov_reg_addr" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R1,
+        0xa,
+        instruction.MOV_LIT_REG,
+        register.R2,
+        'H',
+        instruction.MOV_REG_ADDR,
+        register.R1,
+        register.R2,
+        instruction.HALT,
+        0x0,
+    };
+    var vm = VM.init(&instructions);
+    try std.testing.expect(vm.memory[0xa] == 0x0);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 0xa);
+            try std.testing.expect(vm.reg[register.R2] == 'H');
+            try std.testing.expect(vm.memory[0xa] == 'H');
+            return;
+        }
+    }
+}
+test "mov_lit_addr" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R1,
+        0x7,
+        instruction.MOV_LIT_ADDR,
+        register.R1,
+        'H',
+        instruction.HALT,
+        0x0,
+    };
+    var vm = VM.init(&instructions);
+    try std.testing.expect(vm.memory[0x7] == 0x0);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 0x7);
+            try std.testing.expect(vm.memory[0x7] == 'H');
+            return;
+        }
+    }
+}
+
+test "load" {
+    var instructions = [_]u16{
+        instruction.LOAD,
+        register.R1,
+        0x4,
+        instruction.HALT,
+        0xdead,
+    };
+    var vm = VM.init(&instructions);
+    try std.testing.expect(vm.memory[0x4] == 0xdead);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R1] == 0xdead);
+            try std.testing.expect(vm.memory[0x4] == 0xdead);
+            return;
+        }
+    }
+}
+
+test "store_lit" {
+    var instructions = [_]u16{
+        instruction.STORE_LIT,
+        0x4,
+        0xdead,
+        instruction.HALT,
+        0x0,
+    };
+    var vm = VM.init(&instructions);
+    try std.testing.expect(vm.memory[0x4] == 0x0);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.memory[0x4] == 0xdead);
+            return;
+        }
+    }
+}
+
+test "store_reg" {
+    var instructions = [_]u16{
+        instruction.MOV_LIT_REG,
+        register.R1,
+        0xdead,
+        instruction.STORE_REG,
+        0x7,
+        register.R1,
+        instruction.HALT,
+        0x0,
+    };
+    var vm = VM.init(&instructions);
+    try std.testing.expect(vm.memory[0x7] == 0x0);
+    while (true) {
+        const status = try vm.step();
+        if (status >= 0) {
+            try std.testing.expect(status == 0);
+            try std.testing.expect(vm.memory[0x7] == 0xdead);
+            return;
+        }
+    }
+}
