@@ -9,7 +9,7 @@ pub const VMError = error{
 
 pub const VM = struct {
     /// IP ACC R1 R2
-    reg: [4]u16 = [_]u16{ 0, 0, 0, 0 },
+    reg: [8]u16 = [_]u16{0} ** 8,
     memory: []u16,
 
     pub fn init(mem: []u16) VM {
@@ -241,7 +241,7 @@ pub const VM = struct {
 test "mov_lit_reg" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R1,
+        register.R0,
         0xdead,
         instruction.HALT,
     };
@@ -250,7 +250,7 @@ test "mov_lit_reg" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
-            try std.testing.expect(vm.reg[register.R1] == 0xdead);
+            try std.testing.expect(vm.reg[register.R0] == 0xdead);
             return;
         }
     }
@@ -259,11 +259,11 @@ test "mov_lit_reg" {
 test "mov_reg_reg" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R1,
+        register.R0,
         0xdead,
         instruction.MOV_REG_REG,
-        register.R2,
         register.R1,
+        register.R0,
         instruction.HALT,
     };
     var vm = VM.init(&instructions);
@@ -271,8 +271,8 @@ test "mov_reg_reg" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
+            try std.testing.expect(vm.reg[register.R0] == 0xdead);
             try std.testing.expect(vm.reg[register.R1] == 0xdead);
-            try std.testing.expect(vm.reg[register.R2] == 0xdead);
             return;
         }
     }
@@ -281,11 +281,11 @@ test "mov_reg_reg" {
 test "mov_addr_reg" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R2,
+        register.R1,
         0x7,
         instruction.MOV_ADDR_REG,
+        register.R0,
         register.R1,
-        register.R2,
         instruction.HALT,
         'H',
     };
@@ -294,8 +294,8 @@ test "mov_addr_reg" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
-            try std.testing.expect(vm.reg[register.R1] == 'H');
-            try std.testing.expect(vm.reg[register.R2] == 0x7);
+            try std.testing.expect(vm.reg[register.R0] == 'H');
+            try std.testing.expect(vm.reg[register.R1] == 0x7);
             return;
         }
     }
@@ -304,14 +304,14 @@ test "mov_addr_reg" {
 test "mov_reg_addr" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R1,
+        register.R0,
         0xa,
         instruction.MOV_LIT_REG,
-        register.R2,
+        register.R1,
         'H',
         instruction.MOV_REG_ADDR,
+        register.R0,
         register.R1,
-        register.R2,
         instruction.HALT,
         0x0,
     };
@@ -321,8 +321,8 @@ test "mov_reg_addr" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
-            try std.testing.expect(vm.reg[register.R1] == 0xa);
-            try std.testing.expect(vm.reg[register.R2] == 'H');
+            try std.testing.expect(vm.reg[register.R0] == 0xa);
+            try std.testing.expect(vm.reg[register.R1] == 'H');
             try std.testing.expect(vm.memory[0xa] == 'H');
             return;
         }
@@ -331,10 +331,10 @@ test "mov_reg_addr" {
 test "mov_lit_addr" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R1,
+        register.R0,
         0x7,
         instruction.MOV_LIT_ADDR,
-        register.R1,
+        register.R0,
         'H',
         instruction.HALT,
         0x0,
@@ -345,7 +345,7 @@ test "mov_lit_addr" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
-            try std.testing.expect(vm.reg[register.R1] == 0x7);
+            try std.testing.expect(vm.reg[register.R0] == 0x7);
             try std.testing.expect(vm.memory[0x7] == 'H');
             return;
         }
@@ -355,7 +355,7 @@ test "mov_lit_addr" {
 test "load" {
     var instructions = [_]u16{
         instruction.LOAD,
-        register.R1,
+        register.R0,
         0x4,
         instruction.HALT,
         0xdead,
@@ -366,7 +366,7 @@ test "load" {
         const status = try vm.step();
         if (status >= 0) {
             try std.testing.expect(status == 0);
-            try std.testing.expect(vm.reg[register.R1] == 0xdead);
+            try std.testing.expect(vm.reg[register.R0] == 0xdead);
             try std.testing.expect(vm.memory[0x4] == 0xdead);
             return;
         }
@@ -396,11 +396,11 @@ test "store_lit" {
 test "store_reg" {
     var instructions = [_]u16{
         instruction.MOV_LIT_REG,
-        register.R1,
+        register.R0,
         0xdead,
         instruction.STORE_REG,
         0x7,
-        register.R1,
+        register.R0,
         instruction.HALT,
         0x0,
     };
