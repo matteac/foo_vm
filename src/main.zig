@@ -64,8 +64,8 @@ pub fn main() !void {
 
     var vmach = core.VM.init(&mem);
 
-    // vmach.dump(hello_world_code.len);
-    // std.debug.print("\n", .{});
+    vmach.dump(hello_world_code.len);
+    std.debug.print("\n", .{});
     while (true) {
         const status = try vmach.step();
         if (status >= 0) {
